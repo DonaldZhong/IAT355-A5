@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <meta charset="utf-8">
+<title>Interactive Scatterplot for the Iris dataset</title>
 <style>
 
 /*set the axis line color, dot stroke, font size, and font position*/
@@ -95,12 +96,38 @@ border-radius: 5px;
 font-family: Helvetica, sans-serif;
 font-size: 12px;
 }
+
+.filter_label {
+text-anchor: end;
+font-weight: bold;
+}
+
+#attr1_slider, #attr2_slider, #attr3_slider, #attr4_slider{
+    opacity: .4
+}
+
+.axis text {
+  font: 11px sans-serif;
+}
+
+.axis path,
+.axis line {
+    fill: none;
+    stroke: black;
+    shape-rendering: crispEdges;
+}
+
+.axis text {
+    font-family: sans-serif;
+    font-size: 11px;
+}
+
 </style>
 
 <body>
 
 
-<script src="http://d3js.org/d3.v3.min.js"></script>
+<script src="d3.min.js"></script>
 
 <script>
 
@@ -141,6 +168,7 @@ var svg = d3.select("body").append("svg")
     .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
 
 d3.csv("iris.csv", function(error, data) {
+  dataset = data;
   data.forEach(function(d) {
     d.petalLength = +d.petalLength;
     d.petalWidth = +d.petalWidth;
@@ -184,6 +212,8 @@ d3.csv("iris.csv", function(error, data) {
       .on("mouseover", showtooltip)
       .on("mouseout", hidetooltip)
       .on("click", function(){
+
+      //Brushing - shows feedback when a point on scatterplot is clicked, removes the point when it is clicked again   
       var attr_to_change = "fill";
       var selectedValue = "black";
       if( d3.select(this).attr("fill") === selectedValue ){
@@ -195,24 +225,18 @@ d3.csv("iris.csv", function(error, data) {
       }
     })
 
-  var legend = svg.selectAll(".legend")
-      .data(color.domain())
-      .enter().append("g")
-      .attr("class", "legend")
-      .attr("transform", function(d, i) { return "translate(0," + i * 20 + ")"; });
-
+//Species filter
   d3.selectAll("[name=v]").on("change", function() {
       var selected = this.value;
       display = this.checked ? "inline" : "none";
 
 
   svg.selectAll(".dot")
-      .filter(function(d) {return selected == d.species;})
+      .filter(function(d) {return selected == d.species})
       .attr("display", display);
       });
 
-
-
+//Change size of mark on graph to sepal width or sepal length  
   d3.selectAll("[name=sepal]").on("change", function(d) {
      radius = this.value;
 
@@ -222,7 +246,7 @@ d3.csv("iris.csv", function(error, data) {
   });
 
 
-
+//Automatic scaling for the X and Y axis
   d3.select("[name=xAX]").on("change", function(){
     xAxy = this.value;
     console.log(xAxy)
@@ -247,6 +271,8 @@ d3.csv("iris.csv", function(error, data) {
     svg.selectAll(".y.axis").selectAll("text.label").text(axisNames[yAxy] + " (cm)");
   });
 
+
+//Tooltip function
   function showtooltip(d){
     d3.select("#tooltip")
     .html("<b>Details</b>"+
@@ -267,6 +293,199 @@ function hidetooltip(){
     d3.select("#tooltip")
     .style("display", "none")
 }
+
+//-----------------Petal Width Range Filter-----------------\\
+var attr1_scale = d3.scale.linear()
+    .domain([0, 3])
+    .range([100, 200])
+
+var brush1 = d3.svg.brush()
+    .x(attr1_scale)
+    .extent([0, 3])
+    .on("brushend", brush1end);
+
+var attr1_axis = d3.svg.axis()
+    .orient("bottom")
+    .ticks(3)
+    .scale(attr1_scale)
+
+svg.append("text")
+.attr({
+    x: 180,
+    y: 0,
+    class: "filter_label"
+})
+.text("Petal Width")
+
+svg.append("g")
+    .attr("class", "axis")
+    .attr("transform", "translate(0,20)")
+    .call(attr1_axis);
+
+var gBrush1 = svg.append("g")
+    .attr("class", "brush")
+    .call(brush1);
+
+gBrush1.selectAll("rect")
+    .attr("height", 20)
+    .attr("id", "attr1_slider");
+
+function brush1end(){
+    console.log(brush1.extent())
+     minPW = brush1.extent()[0]
+     maxPW = brush1.extent()[1]
+     update();
+  }
+//----------------------End of Petal Width Range Filter----------------\\
+
+//----------------------Petal Length Range filter--------------------\\
+var attr2_scale = d3.scale.linear()
+    .domain([0, 7])
+    .range([100, 200])
+
+var brush2 = d3.svg.brush()
+    .x(attr2_scale)
+    .extent([0, 7])
+    .on("brushend", brush2end);
+
+var attr2_axis = d3.svg.axis()
+    .orient("bottom")
+    .ticks(7)
+    .scale(attr2_scale)
+
+svg.append("text")
+.attr({
+    x: 350,
+    y: 0,
+    class: "filter_label"
+})
+.text("Petal Length")
+
+svg.append("g")
+    .attr("class", "axis")
+    .attr("transform", "translate(150,20)")
+    .call(attr2_axis);
+
+var gBrush2 = svg.append("g")
+    .attr("class", "brush")
+    .attr("transform", "translate(150,0)")
+    .call(brush2);
+
+gBrush2.selectAll("rect")
+    .attr("height", 20)
+    .attr("id", "attr2_slider");
+
+function brush2end(){
+    console.log(brush2.extent())
+    minPL = brush2.extent()[0]
+    maxPL = brush2.extent()[1]
+    update();
+    }
+  //---------------End of Petal Length Range Filter ----------------------\\
+
+//----------------------Range filter for Sepal Length-------------------\\
+var attr3_scale = d3.scale.linear()
+    .domain([0, 8])
+    .range([100, 200])
+
+var brush3 = d3.svg.brush()
+    .x(attr3_scale)
+    .extent([0, 8])
+    .on("brushend", brush3end);
+
+var attr3_axis = d3.svg.axis()
+    .orient("bottom")
+    .ticks(8)
+    .scale(attr3_scale)
+
+svg.append("text")
+.attr({
+    x: 500,
+    y: 0,
+    class: "filter_label"
+})
+.text("Sepal Length")
+
+svg.append("g")
+    .attr("class", "axis")
+    .attr("transform", "translate(300,20)")
+    .call(attr3_axis);
+
+var gBrush3 = svg.append("g")
+    .attr("class", "brush")
+    .attr("transform", "translate(300,0)")
+    .call(brush3);
+
+gBrush3.selectAll("rect")
+    .attr("height", 20)
+    .attr("id", "attr3_slider");
+
+function brush3end(){
+    console.log(brush3.extent())
+    minSL = brush3.extent()[0]
+    maxSL = brush3.extent()[1]
+    update();
+    }
+//------------------------End of Sepal Length Range Filter------------\\
+
+//-----------------------Range filter for Sepal Width---------------------\\
+var attr4_scale = d3.scale.linear()
+    .domain([0, 5])
+    .range([100, 200])
+
+var brush4 = d3.svg.brush()
+    .x(attr4_scale)
+    .extent([0, 5])
+    .on("brushend", brush4end);
+
+var attr4_axis = d3.svg.axis()
+    .orient("bottom")
+    .ticks(5)
+    .scale(attr4_scale)
+
+svg.append("text")
+.attr({
+    x: 650,
+    y: 0,
+    class: "filter_label"
+})
+.text("Sepal Width")
+
+svg.append("g")
+    .attr("class", "axis")
+    .attr("transform", "translate(450,20)")
+    .call(attr4_axis);
+
+var gBrush4 = svg.append("g")
+    .attr("class", "brush")
+    .attr("transform", "translate(450,0)")
+    .call(brush4);
+
+gBrush4.selectAll("rect")
+    .attr("height", 20)
+    .attr("id", "attr4_slider");
+
+function brush4end(){
+    console.log(brush4.extent())
+    minSW = brush4.extent()[0]
+    maxSW = brush4.extent()[1]
+    update();
+    }
+//-----------------End of Range filter for Sepal Width---------------------\\
+
+function show(d) {
+    return d.petalWidth > minPW && d.petalWidth < maxPW
+    && d.petalLength > minPL && d.petalLength < maxPL
+    && d.sepalWidth > minSW && d.sepalWidth < maxSW
+    && d.sepalLength > minSL && d.sepalLength < maxSL
+}
+
+function update() {
+  circles.attr("display", "none")
+  circles.filter(show)
+    .attr("display", "block")
+}
+
 
 });
 
@@ -312,6 +531,5 @@ function hidetooltip(){
         <option value ="sepalLength">sepalLength</option>
         <option value ="sepalWidth">sepalWidth</option>
   </select>  
-
   <br>
 </body>
